@@ -1,0 +1,44 @@
+<.header>
+  Listing Flashcards
+  <:actions>
+    <.link patch={~p"/flashcards/new"}>
+      <.button>New Flashcard</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="flashcards"
+  rows={@streams.flashcards}
+  row_click={fn {_id, flashcard} -> JS.navigate(~p"/flashcards/#{flashcard}") end}
+>
+  <:col :let={{_id, flashcard}} label="Question">{flashcard.question}</:col>
+  <:col :let={{_id, flashcard}} label="Answer">{flashcard.answer}</:col>
+  <:col :let={{_id, flashcard}} label="Hint">{flashcard.hint}</:col>
+  <:col :let={{_id, flashcard}} label="Tags">{flashcard.tags}</:col>
+  <:action :let={{_id, flashcard}}>
+    <div class="sr-only">
+      <.link navigate={~p"/flashcards/#{flashcard}"}>Show</.link>
+    </div>
+    <.link patch={~p"/flashcards/#{flashcard}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, flashcard}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: flashcard.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="flashcard-modal" show on_cancel={JS.patch(~p"/flashcards")}>
+  <.live_component
+    module={ChezaCardsWeb.FlashcardLive.FormComponent}
+    id={@flashcard.id || :new}
+    title={@page_title}
+    action={@live_action}
+    flashcard={@flashcard}
+    patch={~p"/flashcards"}
+  />
+</.modal>

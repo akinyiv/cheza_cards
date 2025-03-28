@@ -1,0 +1,44 @@
+<.header>
+  Listing Achievements
+  <:actions>
+    <.link patch={~p"/achievements/new"}>
+      <.button>New Achievement</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="achievements"
+  rows={@streams.achievements}
+  row_click={fn {_id, achievement} -> JS.navigate(~p"/achievements/#{achievement}") end}
+>
+  <:col :let={{_id, achievement}} label="Name">{achievement.name}</:col>
+  <:col :let={{_id, achievement}} label="Description">{achievement.description}</:col>
+  <:col :let={{_id, achievement}} label="Badge icon">{achievement.badge_icon}</:col>
+  <:col :let={{_id, achievement}} label="Required score">{achievement.required_score}</:col>
+  <:action :let={{_id, achievement}}>
+    <div class="sr-only">
+      <.link navigate={~p"/achievements/#{achievement}"}>Show</.link>
+    </div>
+    <.link patch={~p"/achievements/#{achievement}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, achievement}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: achievement.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="achievement-modal" show on_cancel={JS.patch(~p"/achievements")}>
+  <.live_component
+    module={ChezaCardsWeb.AchievementLive.FormComponent}
+    id={@achievement.id || :new}
+    title={@page_title}
+    action={@live_action}
+    achievement={@achievement}
+    patch={~p"/achievements"}
+  />
+</.modal>

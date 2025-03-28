@@ -1,0 +1,29 @@
+<.header>
+  User progress {@user_progress.id}
+  <:subtitle>This is a user_progress record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/user_progress/#{@user_progress}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit user_progress</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Streak count">{@user_progress.streak_count}</:item>
+  <:item title="Total stars">{@user_progress.total_stars}</:item>
+  <:item title="Level">{@user_progress.level}</:item>
+  <:item title="Last activity">{@user_progress.last_activity}</:item>
+</.list>
+
+<.back navigate={~p"/user_progress"}>Back to user_progress</.back>
+
+<.modal :if={@live_action == :edit} id="user_progress-modal" show on_cancel={JS.patch(~p"/user_progress/#{@user_progress}")}>
+  <.live_component
+    module={ChezaCardsWeb.UserProgressLive.FormComponent}
+    id={@user_progress.id}
+    title={@page_title}
+    action={@live_action}
+    user_progress={@user_progress}
+    patch={~p"/user_progress/#{@user_progress}"}
+  />
+</.modal>

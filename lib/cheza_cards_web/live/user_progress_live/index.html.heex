@@ -1,0 +1,44 @@
+<.header>
+  Listing User progress
+  <:actions>
+    <.link patch={~p"/user_progress/new"}>
+      <.button>New User progress</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="user_progress"
+  rows={@streams.user_progress_collection}
+  row_click={fn {_id, user_progress} -> JS.navigate(~p"/user_progress/#{user_progress}") end}
+>
+  <:col :let={{_id, user_progress}} label="Streak count">{user_progress.streak_count}</:col>
+  <:col :let={{_id, user_progress}} label="Total stars">{user_progress.total_stars}</:col>
+  <:col :let={{_id, user_progress}} label="Level">{user_progress.level}</:col>
+  <:col :let={{_id, user_progress}} label="Last activity">{user_progress.last_activity}</:col>
+  <:action :let={{_id, user_progress}}>
+    <div class="sr-only">
+      <.link navigate={~p"/user_progress/#{user_progress}"}>Show</.link>
+    </div>
+    <.link patch={~p"/user_progress/#{user_progress}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, user_progress}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: user_progress.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="user_progress-modal" show on_cancel={JS.patch(~p"/user_progress")}>
+  <.live_component
+    module={ChezaCardsWeb.UserProgressLive.FormComponent}
+    id={@user_progress.id || :new}
+    title={@page_title}
+    action={@live_action}
+    user_progress={@user_progress}
+    patch={~p"/user_progress"}
+  />
+</.modal>
