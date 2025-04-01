@@ -15,15 +15,6 @@ defmodule ChezaCardsWeb.UserAuth do
 
   @doc """
   Logs the user in.
-
-  It renews the session ID and clears the whole session
-  to avoid fixation attacks. See the renew_session
-  function to customize this behaviour.
-
-  It also sets a `:live_socket_id` key in the session,
-  so LiveView sessions are identified and automatically
-  disconnected on log out. The line can be safely removed
-  if you are not using LiveView.
   """
   def log_in_user(conn, user, params \\ %{}) do
     token = Accounts.generate_user_session_token(user)
@@ -60,8 +51,6 @@ defmodule ChezaCardsWeb.UserAuth do
   #     end
   #
   defp renew_session(conn) do
-    delete_csrf_token()
-
     conn
     |> configure_session(renew: true)
     |> clear_session()
@@ -69,8 +58,6 @@ defmodule ChezaCardsWeb.UserAuth do
 
   @doc """
   Logs the user out.
-
-  It clears all session data for safety. See renew_session.
   """
   def log_out_user(conn) do
     user_token = get_session(conn, :user_token)
@@ -112,45 +99,28 @@ defmodule ChezaCardsWeb.UserAuth do
 
   @doc """
   Handles mounting and authenticating the current_user in LiveViews.
-
-  ## `on_mount` arguments
-
-    * `:mount_current_user` - Assigns current_user
-      to socket assigns based on user_token, or nil if
-      there's no user_token or no matching user.
-
-    * `:ensure_authenticated` - Authenticates the user from the session,
-      and assigns the current_user to socket assigns based
-      on user_token.
-      Redirects to login page if there's no logged user.
-
-    * `:redirect_if_user_is_authenticated` - Authenticates the user from the session.
-      Redirects to signed_in_path if there's a logged user.
-
-  ## Examples
-
-  Use the `on_mount` lifecycle macro in LiveViews to mount or authenticate
-  the current_user:
-
-      defmodule ChezaCardsWeb.PageLive do
-        use ChezaCardsWeb, :live_view
-
-        on_mount {ChezaCardsWeb.UserAuth, :mount_current_user}
-        ...
-      end
-
-  Or use the `live_session` of your router to invoke the on_mount callback:
-
-      live_session :authenticated, on_mount: [{ChezaCardsWeb.UserAuth, :ensure_authenticated}] do
-        live "/profile", ProfileLive, :index
-      end
   """
+  def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
+  socket = mount_current_user(session, socket)
+
+  if socket.assigns.current_user do
+    socket =
+      socket
+      |> Phoenix.LiveView.put_flash(:info, "You are already signed in.")
+      |> Phoenix.LiveView.redirect(to: ~p"/dashboard")
+
+    {:halt, socket}
+  else
+    {:cont, socket}
+  end
+end
+
   def on_mount(:mount_current_user, _params, session, socket) do
-    {:cont, mount_current_user(socket, session)}
+    {:cont, mount_current_user(session, socket)}
   end
 
   def on_mount(:ensure_authenticated, _params, session, socket) do
-    socket = mount_current_user(socket, session)
+    socket = mount_current_user(session, socket)
 
     if socket.assigns.current_user do
       {:cont, socket}
@@ -164,29 +134,38 @@ defmodule ChezaCardsWeb.UserAuth do
     end
   end
 
-  def on_mount(:redirect_if_user_is_authenticated, _params, session, socket) do
-    socket = mount_current_user(socket, session)
+  def on_mount(:ensure_admin_user, _params, session, socket) do
+    socket = mount_current_user(session, socket)
 
-    if socket.assigns.current_user do
-      {:halt, Phoenix.LiveView.redirect(socket, to: signed_in_path(socket))}
-    else
+    if socket.assigns.current_user && socket.assigns.current_user.is_admin do
       {:cont, socket}
+    else
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(:error, "You must be an admin to access this page.")
+        |> Phoenix.LiveView.redirect(to: ~p"/dashboard")
+
+      {:halt, socket}
     end
   end
 
-  defp mount_current_user(socket, session) do
-    Phoenix.Component.assign_new(socket, :current_user, fn ->
-      if user_token = session["user_token"] do
-        Accounts.get_user_by_session_token(user_token)
-      end
-    end)
+  defp mount_current_user(session, socket) do
+    case session do
+      %{"user_token" => user_token} ->
+        Phoenix.Component.assign_new(socket, :current_user, fn ->
+          Accounts.get_user_by_session_token(user_token)
+        end)
+
+      %{} ->
+        Phoenix.Component.assign_new(socket, :current_user, fn -> nil end)
+    end
   end
 
   @doc """
   Used for routes that require the user to not be authenticated.
   """
   def redirect_if_user_is_authenticated(conn, _opts) do
-    if conn.assigns[:current_user] do
+    if conn.assigns.current_user do
       conn
       |> redirect(to: signed_in_path(conn))
       |> halt()
@@ -197,18 +176,29 @@ defmodule ChezaCardsWeb.UserAuth do
 
   @doc """
   Used for routes that require the user to be authenticated.
-
-  If you want to enforce the user email is confirmed before
-  they use the application at all, here would be a good place.
   """
   def require_authenticated_user(conn, _opts) do
-    if conn.assigns[:current_user] do
+    if conn.assigns.current_user do
       conn
     else
       conn
       |> put_flash(:error, "You must log in to access this page.")
       |> maybe_store_return_to()
       |> redirect(to: ~p"/users/log_in")
+      |> halt()
+    end
+  end
+
+  @doc """
+  Used for routes that require the user to be an admin.
+  """
+  def require_admin_user(conn, _opts) do
+    if conn.assigns.current_user && conn.assigns.current_user.is_admin do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must be an admin to access this page.")
+      |> redirect(to: ~p"/dashboard")
       |> halt()
     end
   end
@@ -225,5 +215,5 @@ defmodule ChezaCardsWeb.UserAuth do
 
   defp maybe_store_return_to(conn), do: conn
 
-  defp signed_in_path(_conn), do: ~p"/"
+  defp signed_in_path(_conn), do: ~p"/dashboard"
 end

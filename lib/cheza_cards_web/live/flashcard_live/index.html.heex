@@ -1,44 +1,66 @@
 <.header>
-  Listing Flashcards
+  <%= @collection.name %> - Flashcards
+  <:subtitle>
+    <%= @collection.description %>
+  </:subtitle>
   <:actions>
-    <.link patch={~p"/flashcards/new"}>
-      <.button>New Flashcard</.button>
+    <.link patch={~p"/collections/#{@collection}/flashcards/new"}>
+      <.button>Add Flashcard</.button>
     </.link>
+    <.link navigate={~p"/collections/#{@collection}"}>
+      <.button class="ml-2">Back to Collection</.button>
+    </.link>
+    <.button phx-click="start-study" class="ml-2">Start Study Session</.button>
   </:actions>
 </.header>
 
-<.table
-  id="flashcards"
-  rows={@streams.flashcards}
-  row_click={fn {_id, flashcard} -> JS.navigate(~p"/flashcards/#{flashcard}") end}
->
-  <:col :let={{_id, flashcard}} label="Question">{flashcard.question}</:col>
-  <:col :let={{_id, flashcard}} label="Answer">{flashcard.answer}</:col>
-  <:col :let={{_id, flashcard}} label="Hint">{flashcard.hint}</:col>
-  <:col :let={{_id, flashcard}} label="Tags">{flashcard.tags}</:col>
-  <:action :let={{_id, flashcard}}>
-    <div class="sr-only">
-      <.link navigate={~p"/flashcards/#{flashcard}"}>Show</.link>
+<div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  <div :for={{id, flashcard} <- @streams.flashcards} id={id} class="relative group">
+    <div class="bg-white overflow-hidden shadow-lg rounded-lg hover:shadow-xl transition-shadow duration-300 ease-in-out h-full">
+      <div class="px-6 py-4">
+        <div class="font-bold text-xl mb-2 text-gray-800">
+          <%= String.slice(flashcard.question, 0, 100) %><%= if String.length(flashcard.question) > 100, do: "..." %>
+        </div>
+        <p class="text-gray-600 text-sm mb-4">
+          <%= String.slice(flashcard.answer, 0, 150) %><%= if String.length(flashcard.answer) > 150, do: "..." %>
+        </p>
+        <%= if flashcard.hint do %>
+          <p class="text-gray-500 text-sm italic">
+            Hint: <%= flashcard.hint %>
+          </p>
+        <% end %>
+      </div>
+      <div class="px-6 pt-2 pb-4">
+        <%= for tag <- flashcard.tags do %>
+          <span class="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">
+            #<%= tag %>
+          </span>
+        <% end %>
+      </div>
+      <div class="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ease-in-out bg-gradient-to-l from-white via-white/90">
+        <.link patch={~p"/collections/#{@collection}/flashcards/#{flashcard}/edit"} class="text-blue-600 hover:text-blue-800 mr-4">
+          Edit
+        </.link>
+        <.link
+          phx-click={JS.push("delete", value: %{id: flashcard.id}) |> hide("##{id}")}
+          data-confirm="Are you sure you want to delete this flashcard?"
+          class="text-red-600 hover:text-red-800"
+        >
+          Delete
+        </.link>
+      </div>
     </div>
-    <.link patch={~p"/flashcards/#{flashcard}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={{id, flashcard}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: flashcard.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
-      Delete
-    </.link>
-  </:action>
-</.table>
+  </div>
+</div>
 
-<.modal :if={@live_action in [:new, :edit]} id="flashcard-modal" show on_cancel={JS.patch(~p"/flashcards")}>
+<.modal :if={@live_action in [:new, :edit]} id="flashcard-modal" show on_cancel={JS.patch(~p"/collections/#{@collection}/flashcards")}>
   <.live_component
     module={ChezaCardsWeb.FlashcardLive.FormComponent}
     id={@flashcard.id || :new}
     title={@page_title}
     action={@live_action}
     flashcard={@flashcard}
-    patch={~p"/flashcards"}
+    collection={@collection}
+    patch={~p"/collections/#{@collection}/flashcards"}
   />
 </.modal>

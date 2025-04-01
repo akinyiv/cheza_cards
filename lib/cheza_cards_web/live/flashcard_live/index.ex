@@ -5,8 +5,15 @@ defmodule ChezaCardsWeb.FlashcardLive.Index do
   alias ChezaCards.Cards.Flashcard
 
   @impl true
-  def mount(_params, _session, socket) do
-    {:ok, stream(socket, :flashcards, Cards.list_flashcards())}
+  def mount(%{"collection_id" => collection_id}, _session, socket) do
+    collection = Cards.get_collection!(collection_id)
+
+    socket =
+      socket
+      |> assign(:collection, collection)
+      |> stream(:flashcards, Cards.list_collection_flashcards(collection_id))
+
+    {:ok, socket}
   end
 
   @impl true
@@ -20,15 +27,15 @@ defmodule ChezaCardsWeb.FlashcardLive.Index do
     |> assign(:flashcard, Cards.get_flashcard!(id))
   end
 
-  defp apply_action(socket, :new, _params) do
+  defp apply_action(socket, :new, %{"collection_id" => collection_id}) do
     socket
     |> assign(:page_title, "New Flashcard")
-    |> assign(:flashcard, %Flashcard{})
+    |> assign(:flashcard, %Flashcard{collection_id: collection_id})
   end
 
-  defp apply_action(socket, :index, _params) do
+  defp apply_action(socket, :index, %{"collection_id" => _collection_id}) do
     socket
-    |> assign(:page_title, "Listing Flashcards")
+    |> assign(:page_title, "#{socket.assigns.collection.name} - Flashcards")
     |> assign(:flashcard, nil)
   end
 
@@ -43,5 +50,11 @@ defmodule ChezaCardsWeb.FlashcardLive.Index do
     {:ok, _} = Cards.delete_flashcard(flashcard)
 
     {:noreply, stream_delete(socket, :flashcards, flashcard)}
+  end
+
+  @impl true
+  def handle_event("start-study", _params, socket) do
+    collection = socket.assigns.collection
+    {:noreply, push_navigate(socket, to: ~p"/collections/#{collection}/study")}
   end
 end

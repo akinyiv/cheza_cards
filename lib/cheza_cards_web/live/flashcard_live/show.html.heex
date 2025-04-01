@@ -2,7 +2,7 @@
   Flashcard {@flashcard.id}
   <:subtitle>This is a flashcard record from your database.</:subtitle>
   <:actions>
-    <.link patch={~p"/flashcards/#{@flashcard}/show/edit"} phx-click={JS.push_focus()}>
+    <.link patch={~p"/collections/#{@collection}/flashcards/#{@flashcard}/edit"} phx-click={JS.push_focus()}>
       <.button>Edit flashcard</.button>
     </.link>
   </:actions>
@@ -15,15 +15,16 @@
   <:item title="Tags">{@flashcard.tags}</:item>
 </.list>
 
-<.back navigate={~p"/flashcards"}>Back to flashcards</.back>
+<.back navigate={~p"/collections/#{@collection}/flashcards"}>Back to flashcards</.back>
 
-<.modal :if={@live_action == :edit} id="flashcard-modal" show on_cancel={JS.patch(~p"/flashcards/#{@flashcard}")}>
+<.modal :if={@live_action == :edit} id="flashcard-modal" show on_cancel={JS.patch(~p"/collections/#{@collection}/flashcards/#{@flashcard}")}>
   <.live_component
     module={ChezaCardsWeb.FlashcardLive.FormComponent}
     id={@flashcard.id}
     title={@page_title}
     action={@live_action}
     flashcard={@flashcard}
-    patch={~p"/flashcards/#{@flashcard}"}
+    collection={@collection}
+    patch={~p"/collections/#{@collection}/flashcards/#{@flashcard}"}
   />
 </.modal>

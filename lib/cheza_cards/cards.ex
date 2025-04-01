@@ -6,8 +6,8 @@ defmodule ChezaCards.Cards do
   import Ecto.Query, warn: false
   alias ChezaCards.Repo
 
-  alias ChezaCards.Cards.Collection
-  alias ChezaCards.Cards.Flashcard
+  alias ChezaCards.Cards.{Collection, Flashcard}
+  alias ChezaCards.Accounts.User
 
   @doc """
   Returns the list of collections.
@@ -20,6 +20,23 @@ defmodule ChezaCards.Cards do
   """
   def list_collections do
     Repo.all(Collection)
+  end
+
+  @doc """
+  Returns the list of recent collections for a user.
+
+  ## Examples
+
+      iex> list_recent_collections(user, 5)
+      [%Collection{}, ...]
+
+  """
+  def list_recent_collections(%User{} = user, limit \\ 5) do
+    Collection
+    |> where([c], c.user_id == ^user.id)
+    |> order_by([c], desc: c.updated_at)
+    |> limit(^limit)
+    |> Repo.all()
   end
 
   @doc """
@@ -117,6 +134,21 @@ defmodule ChezaCards.Cards do
   end
 
   @doc """
+  Lists flashcards belonging to a specific collection.
+
+  ## Examples
+
+      iex> list_flashcards_by_collection(collection_id)
+      [%Flashcard{}, ...]
+
+  """
+  def list_flashcards_by_collection(collection_id) do
+    Flashcard
+    |> where([f], f.collection_id == ^collection_id)
+    |> Repo.all()
+  end
+
+  @doc """
   Gets a single flashcard.
 
   Raises `Ecto.NoResultsError` if the Flashcard does not exist.
@@ -195,5 +227,90 @@ defmodule ChezaCards.Cards do
   """
   def change_flashcard(%Flashcard{} = flashcard, attrs \\ %{}) do
     Flashcard.changeset(flashcard, attrs)
+  end
+
+  @doc """
+  Gets random flashcards for a study session.
+
+  ## Examples
+
+      iex> get_random_flashcards(collection_id, 10)
+      [%Flashcard{}, ...]
+
+  """
+  def get_random_flashcards(collection_id, limit \\ 10) do
+    Flashcard
+    |> where([f], f.collection_id == ^collection_id)
+    |> order_by(fragment("RANDOM()"))
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  @doc """
+  Tracks flashcard progress.
+
+  ## Examples
+
+      iex> track_flashcard_progress(user_id, flashcard_id, status)
+      {:ok, :not_implemented}
+
+  """
+  def track_flashcard_progress(_user_id, _flashcard_id, _status) do
+    # TODO: Implement progress tracking
+    {:ok, :not_implemented}
+  end
+
+  @doc """
+  Gets user streak.
+
+  ## Examples
+
+      iex> get_user_streak(user_id)
+      {:ok, 0}
+
+  """
+  def get_user_streak(_user_id) do
+    # TODO: Implement streak tracking
+    {:ok, 0}
+  end
+
+  @doc """
+  Gets user XP.
+
+  ## Examples
+
+      iex> get_user_xp(user_id)
+      {:ok, 0}
+
+  """
+  def get_user_xp(_user_id) do
+    # TODO: Implement XP system
+    {:ok, 0}
+  end
+
+  @doc """
+  Creates a collection with pre-set CBC-aligned flashcards.
+
+  ## Examples
+
+      iex> create_preset_collection(user_id, "math_g4")
+      {:ok, %Collection{}}
+
+  """
+  def create_preset_collection(user_id, subject) do
+    ChezaCards.Cards.PresetContent.create_preset_collection(user_id, subject)
+  end
+
+  @doc """
+  Lists available preset subjects.
+
+  ## Examples
+
+      iex> list_preset_subjects()
+      ["math_g4", "science_g4", "swahili_g4"]
+
+  """
+  def list_preset_subjects do
+    ["math_g4", "science_g4", "swahili_g4"]
   end
 end

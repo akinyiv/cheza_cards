@@ -6,38 +6,88 @@ defmodule ChezaCardsWeb.UserRegistrationLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-sm">
-      <.header class="text-center">
-        Register for an account
-        <:subtitle>
-          Already registered?
-          <.link navigate={~p"/users/log_in"} class="font-semibold text-brand hover:underline">
-            Log in
-          </.link>
-          to your account now.
-        </:subtitle>
-      </.header>
+    <div class="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 bg-pattern flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div class="max-w-md w-full">
+      <.back navigate={~p"/"}>Home</.back>
+        <div class="text-center mb-8">
+          <div class="inline-block animate-float mb-6">
+            <img src="/images/mascot.svg" alt="ChezaCards Mascot" class="w-24 h-24 mx-auto" />
+          </div>
+          <h2 class="text-3xl font-bold text-gray-900">
+            Join the Fun! 🎉
+          </h2>
+          <p class="mt-2 text-sm text-gray-600">
+            Create your account and start learning with ChezaCards!
+          </p>
+        </div>
 
-      <.simple_form
-        for={@form}
-        id="registration_form"
-        phx-submit="save"
-        phx-change="validate"
-        phx-trigger-action={@trigger_submit}
-        action={~p"/users/log_in?_action=registered"}
-        method="post"
-      >
-        <.error :if={@check_errors}>
-          Oops, something went wrong! Please check the errors below.
-        </.error>
+        <div class="bg-white py-8 px-4 shadow-xl rounded-3xl sm:px-10 transform transition duration-300 hover:scale-[1.02]">
+          <.form
+            for={@form}
+            id="registration_form"
+            phx-submit="save"
+            phx-change="validate"
+            phx-trigger-action={@trigger_submit}
+            action={~p"/users/log_in?_action=registered"}
+            method="post"
+            class="space-y-6"
+          >
+            <div>
+              <.label for={@form[:email].id}>
+                Email 📧
+              </.label>
+              <div class="mt-1">
+                <.input
+                  field={@form[:email]}
+                  type="email"
+                  required
+                  phx-debounce="blur"
+                  class="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                />
+                <%= for msg <- @form[:email].errors do %>
+                  <.error><%= msg %></.error>
+                <% end %>
+              </div>
+            </div>
 
-        <.input field={@form[:email]} type="email" label="Email" required />
-        <.input field={@form[:password]} type="password" label="Password" required />
+            <div>
+              <.label for={@form[:password].id}>
+                Password 🔑
+              </.label>
+              <div class="mt-1">
+                <.input
+                  field={@form[:password]}
+                  type="password"
+                  required
+                  class="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
+                />
+                <%= for msg <- @form[:password].errors do %>
+                  <.error><%= msg %></.error>
+                <% end %>
+              </div>
+            </div>
 
-        <:actions>
-          <.button phx-disable-with="Creating account..." class="w-full">Create an account</.button>
-        </:actions>
-      </.simple_form>
+            <div>
+              <.button
+                phx-disable-with="Creating account..."
+                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transform transition duration-150 hover:scale-105"
+              >
+                Create My Account! 🌟
+              </.button>
+            </div>
+          </.form>
+
+          <p class="mt-6 text-center text-sm text-gray-600">
+            Already have an account?
+            <.link
+              navigate={~p"/users/log_in"}
+              class="font-medium text-purple-600 hover:text-purple-500 ml-1"
+            >
+              Log in here! ✨
+            </.link>
+          </p>
+        </div>
+      </div>
     </div>
     """
   end
@@ -47,7 +97,7 @@ defmodule ChezaCardsWeb.UserRegistrationLive do
 
     socket =
       socket
-      |> assign(trigger_submit: false, check_errors: false)
+      |> assign(trigger_submit: false, page_title: "Join ChezaCards!")
       |> assign_form(changeset)
 
     {:ok, socket, temporary_assigns: [form: nil]}
