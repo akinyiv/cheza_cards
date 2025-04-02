@@ -175,6 +175,20 @@ end
   end
 
   @doc """
+  Requires the user to be an admin.
+  """
+  def require_admin_user(conn, _opts) do
+    if conn.assigns.current_user.is_admin do
+      conn
+    else
+      conn
+      |> put_flash(:error, "You must be an admin to access this page.")
+      |> redirect(to: ~p"/")
+      |> halt()
+    end
+  end
+
+  @doc """
   Used for routes that require the user to be authenticated.
   """
   def require_authenticated_user(conn, _opts) do
@@ -185,20 +199,6 @@ end
       |> put_flash(:error, "You must log in to access this page.")
       |> maybe_store_return_to()
       |> redirect(to: ~p"/users/log_in")
-      |> halt()
-    end
-  end
-
-  @doc """
-  Used for routes that require the user to be an admin.
-  """
-  def require_admin_user(conn, _opts) do
-    if conn.assigns.current_user && conn.assigns.current_user.is_admin do
-      conn
-    else
-      conn
-      |> put_flash(:error, "You must be an admin to access this page.")
-      |> redirect(to: ~p"/dashboard")
       |> halt()
     end
   end

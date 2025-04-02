@@ -247,6 +247,28 @@ defmodule ChezaCards.Cards do
   end
 
   @doc """
+  Returns a list of flashcards for a study session.
+  """
+  def get_study_session_flashcards(collection_id, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 10)
+
+    Flashcard
+    |> where([f], f.collection_id == ^collection_id)
+    |> order_by(fragment("RANDOM()"))
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns a list of flashcards for a collection.
+  """
+  def list_collection_flashcards(collection_id) do
+    Flashcard
+    |> where([f], f.collection_id == ^collection_id)
+    |> Repo.all()
+  end
+
+  @doc """
   Tracks flashcard progress.
 
   ## Examples

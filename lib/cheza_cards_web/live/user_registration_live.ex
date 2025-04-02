@@ -11,7 +11,7 @@ defmodule ChezaCardsWeb.UserRegistrationLive do
       <.back navigate={~p"/"}>Home</.back>
         <div class="text-center mb-8">
           <div class="inline-block animate-float mb-6">
-            <img src="/images/mascot.svg" alt="ChezaCards Mascot" class="w-24 h-24 mx-auto" />
+            <img src="/images/ChezaCardsMascot.png" alt="ChezaCards Mascot" class="w-24 h-24 mx-auto" />
           </div>
           <h2 class="text-3xl font-bold text-gray-900">
             Join the Fun! 🎉
@@ -44,7 +44,7 @@ defmodule ChezaCardsWeb.UserRegistrationLive do
                   phx-debounce="blur"
                   class="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
                 />
-                <%= for msg <- @form[:email].errors do %>
+                <%= for {msg, _} <- @form[:email].errors do %>
                   <.error><%= msg %></.error>
                 <% end %>
               </div>
@@ -61,7 +61,7 @@ defmodule ChezaCardsWeb.UserRegistrationLive do
                   required
                   class="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm"
                 />
-                <%= for msg <- @form[:password].errors do %>
+                <%= for {msg, _} <- @form[:password].errors do %>
                   <.error><%= msg %></.error>
                 <% end %>
               </div>

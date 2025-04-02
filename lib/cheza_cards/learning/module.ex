@@ -5,9 +5,8 @@ defmodule ChezaCards.Learning.Module do
   schema "modules" do
     field :name, :string
     field :description, :string
-    field :slug, :string
     field :order, :integer
-    field :metadata, :map, default: %{}
+    field :image_url, :string
 
     belongs_to :track, ChezaCards.Learning.Track
     has_many :lessons, ChezaCards.Learning.Lesson
@@ -19,10 +18,8 @@ defmodule ChezaCards.Learning.Module do
   @doc false
   def changeset(module, attrs) do
     module
-    |> cast(attrs, [:name, :description, :slug, :order, :track_id, :metadata])
-    |> validate_required([:name, :slug, :track_id])
-    |> unique_constraint([:track_id, :slug])
-    |> validate_format(:slug, ~r/^[a-z0-9-]+$/, message: "must contain only lowercase letters, numbers, and dashes")
+    |> cast(attrs, [:name, :description, :order, :image_url, :track_id])
+    |> validate_required([:name, :description, :track_id])
     |> foreign_key_constraint(:track_id)
   end
 end

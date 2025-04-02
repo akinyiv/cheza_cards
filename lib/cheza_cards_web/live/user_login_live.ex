@@ -8,7 +8,7 @@ defmodule ChezaCardsWeb.UserLoginLive do
         <.back navigate={~p"/"}>Home</.back>
         <div class="text-center mb-8">
           <div class="inline-block animate-float mb-6">
-            <img src="/images/mascot.svg" alt="ChezaCards Mascot" class="w-24 h-24 mx-auto" />
+            <img src="/images/ChezaCardsMascot.png" alt="ChezaCards Mascot" class="w-24 h-24 mx-auto" />
           </div>
           <h2 class="text-3xl font-bold text-gray-900">
             Welcome Back, Friend! 👋

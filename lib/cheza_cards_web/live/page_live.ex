@@ -9,7 +9,7 @@ defmodule ChezaCardsWeb.PageLive do
         <div class="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 py-16 sm:py-24">
           <div class="text-center">
             <div class="inline-block animate-float mb-8">
-              <img src="/images/mascot.svg" alt="ChezaCards Mascot" class="w-32 h-32 mx-auto" loading="lazy" />
+              <img src="/images/ChezaCardsMascot.png" alt="ChezaCards Mascot" class="w-32 h-32 mx-auto" loading="lazy" />
             </div>
             <h1 class="text-4xl sm:text-5xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 bg-clip-text text-transparent animate-gradient-x">
               Learning is Fun with ChezaCards! 🎉

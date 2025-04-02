@@ -7,11 +7,12 @@ defmodule ChezaCards.Accounts.User do
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
+    field :is_admin, :boolean, default: false
 
     has_many :collections, ChezaCards.Cards.Collection
     has_many :flashcards, ChezaCards.Cards.Flashcard
-    has_one :user_progress, ChezaCards.Progress.UserProgress
-    has_many :user_achievements, ChezaCards.Progress.UserAchievement
+    has_many :user_progress, ChezaCards.Learning.UserProgress
+    has_many :user_achievements, ChezaCards.Gamification.UserAchievement
     has_many :achievements, through: [:user_achievements, :achievement]
 
     timestamps()
@@ -29,10 +30,10 @@ defmodule ChezaCards.Accounts.User do
 
     * `:hash_password` - Hashes the password so it can be stored securely
       in the database and ensures the password field is cleared to prevent
-      leaks in the logs. If password hashing is not needed and clearing the
-      password field is not desired (like when using this changeset for
-      validations on a LiveView form), this option can be set to `false`.
-      Defaults to `true`.
+      leaks in the logs. If password hashing is not needed and clearing
+      the password field is not desired (like when using this changeset
+      for validations on a LiveView form), this option can be set to
+      `false`. Defaults to `true`.
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
@@ -54,7 +55,6 @@ defmodule ChezaCards.Accounts.User do
     changeset
     |> validate_required([:password])
     |> validate_length(:password, min: 12, max: 72)
-    # Examples of additional password validation:
     # |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
     # |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
     # |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/, message: "at least one digit or punctuation character")
@@ -69,8 +69,6 @@ defmodule ChezaCards.Accounts.User do
       changeset
       # If using Bcrypt, then further validate it is at most 72 bytes long
       |> validate_length(:password, max: 72, count: :bytes)
-      # Hashing could be done with `Ecto.Changeset.prepare_changes/2`, but that
-      # would keep the database transaction open longer and hurt performance.
       |> put_change(:hashed_password, Bcrypt.hash_pwd_salt(password))
       |> delete_change(:password)
     else
@@ -100,10 +98,10 @@ defmodule ChezaCards.Accounts.User do
 
     * `:hash_password` - Hashes the password so it can be stored securely
       in the database and ensures the password field is cleared to prevent
-      leaks in the logs. If password hashing is not needed and clearing the
-      password field is not desired (like when using this changeset for
-      validations on a LiveView form), this option can be set to `false`.
-      Defaults to `true`.
+      leaks in the logs. If password hashing is not needed and clearing
+      the password field is not desired (like when using this changeset
+      for validations on a LiveView form), this option can be set to
+      `false`. Defaults to `true`.
   """
   def password_changeset(user, attrs, opts \\ []) do
     user

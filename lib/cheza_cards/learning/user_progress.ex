@@ -3,8 +3,8 @@ defmodule ChezaCards.Learning.UserProgress do
   import Ecto.Changeset
 
   schema "user_progress" do
-    field :status, :string
-    field :progress_data, :map
+    field :status, :string # not_started, in_progress, completed
+    field :progress_data, :map, default: %{}
     field :completed_at, :utc_datetime
 
     belongs_to :user, ChezaCards.Accounts.User
@@ -19,7 +19,11 @@ defmodule ChezaCards.Learning.UserProgress do
   def changeset(user_progress, attrs) do
     user_progress
     |> cast(attrs, [:user_id, :track_id, :module_id, :lesson_id, :status, :progress_data, :completed_at])
-    |> validate_required([:user_id, :track_id, :status])
-    |> unique_constraint([:user_id, :lesson_id])
+    |> validate_required([:user_id, :status])
+    |> validate_inclusion(:status, ["not_started", "in_progress", "completed"])
+    |> foreign_key_constraint(:user_id)
+    |> foreign_key_constraint(:track_id)
+    |> foreign_key_constraint(:module_id)
+    |> foreign_key_constraint(:lesson_id)
   end
 end

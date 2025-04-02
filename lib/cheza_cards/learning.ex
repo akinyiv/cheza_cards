@@ -1,45 +1,52 @@
 defmodule ChezaCards.Learning do
   @moduledoc """
-  The Learning context manages the learning content system, including tracks,
-  modules, lessons, and user progress tracking.
+  The Learning context.
   """
 
   import Ecto.Query, warn: false
   alias ChezaCards.Repo
 
   alias ChezaCards.Learning.{Track, Module, Lesson, UserProgress}
+  alias ChezaCards.Accounts.User
 
   @doc """
-  Returns the list of learning tracks.
+  Returns the list of featured tracks.
   """
-  def list_tracks do
+  def list_featured_tracks do
     Track
-    |> order_by(asc: :order)
+    |> where([t], t.is_featured == true)
+    |> preload([:modules])
     |> Repo.all()
   end
 
   @doc """
-  Returns a list of featured tracks for the dashboard.
+  Returns the list of tracks.
   """
-  def list_featured_tracks do
+  def list_tracks do
     Track
-    |> where(is_active: true, is_featured: true)
-    |> order_by(asc: :order)
+    |> preload([:modules])
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns a user's recent progress across all tracks and lessons.
+  """
+  def get_recent_progress(%User{} = user) do
+    UserProgress
+    |> where(user_id: ^user.id)
+    |> order_by(desc: :updated_at)
+    |> limit(5)
+    |> preload([:track, :module, :lesson])
     |> Repo.all()
   end
 
   @doc """
   Gets a single track.
-  Raises `Ecto.NoResultsError` if the Track does not exist.
   """
-  def get_track!(id), do: Repo.get!(Track, id)
-
-  @doc """
-  Gets a track by its slug.
-  Returns nil if no track is found.
-  """
-  def get_track_by_slug(slug) do
-    Repo.get_by(Track, slug: slug)
+  def get_track!(id) do
+    Track
+    |> preload([:modules])
+    |> Repo.get!(id)
   end
 
   @doc """
@@ -74,30 +81,23 @@ defmodule ChezaCards.Learning do
     Track.changeset(track, attrs)
   end
 
-  # Module functions
-
   @doc """
   Returns the list of modules for a track.
   """
   def list_modules(%Track{} = track) do
     Module
     |> where(track_id: ^track.id)
-    |> order_by(asc: :order)
+    |> preload([:lessons])
     |> Repo.all()
   end
 
   @doc """
   Gets a single module.
-  Raises `Ecto.NoResultsError` if the Module does not exist.
   """
-  def get_module!(id), do: Repo.get!(Module, id)
-
-  @doc """
-  Gets a module by its slug within a track.
-  Returns nil if no module is found.
-  """
-  def get_module_by_slug(track_id, slug) do
-    Repo.get_by(Module, track_id: track_id, slug: slug)
+  def get_module!(id) do
+    Module
+    |> preload([:lessons])
+    |> Repo.get!(id)
   end
 
   @doc """
@@ -126,27 +126,16 @@ defmodule ChezaCards.Learning do
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking module changes.
-  """
-  def change_module(%Module{} = module, attrs \\ %{}) do
-    Module.changeset(module, attrs)
-  end
-
-  # Lesson functions
-
-  @doc """
   Returns the list of lessons for a module.
   """
   def list_lessons(%Module{} = module) do
     Lesson
     |> where(module_id: ^module.id)
-    |> order_by(asc: :order)
     |> Repo.all()
   end
 
   @doc """
   Gets a single lesson.
-  Raises `Ecto.NoResultsError` if the Lesson does not exist.
   """
   def get_lesson!(id), do: Repo.get!(Lesson, id)
 
@@ -176,61 +165,49 @@ defmodule ChezaCards.Learning do
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking lesson changes.
+  Updates a user's progress for a lesson.
   """
-  def change_lesson(%Lesson{} = lesson, attrs \\ %{}) do
-    Lesson.changeset(lesson, attrs)
+  def update_user_progress(%User{} = user, %Lesson{} = lesson, attrs) do
+    progress =
+      UserProgress
+      |> where(user_id: ^user.id, lesson_id: ^lesson.id)
+      |> Repo.one() ||
+        %UserProgress{
+          user_id: user.id,
+          lesson_id: lesson.id,
+          module_id: lesson.module_id,
+          track_id: lesson.track_id
+        }
+
+    progress
+    |> UserProgress.changeset(attrs)
+    |> Repo.insert_or_update()
   end
 
-  # User Progress functions
-
   @doc """
-  Gets a user's progress for a specific track.
+  Gets a user's progress for a lesson.
   """
-  def get_user_track_progress(user_id, track_id) do
+  def get_user_lesson_progress(%User{} = user, %Lesson{} = lesson) do
     UserProgress
-    |> where(user_id: ^user_id, track_id: ^track_id)
-    |> order_by(desc: :updated_at)
-    |> Repo.all()
-  end
-
-  @doc """
-  Gets a user's progress for a specific lesson.
-  """
-  def get_user_lesson_progress(user_id, lesson_id) do
-    UserProgress
-    |> where(user_id: ^user_id, lesson_id: ^lesson_id)
+    |> where(user_id: ^user.id, lesson_id: ^lesson.id)
     |> Repo.one()
   end
 
   @doc """
-  Updates or creates user progress for a lesson.
+  Gets a user's progress for a module.
   """
-  def update_user_lesson_progress(user_id, lesson_id, attrs) do
-    case get_user_lesson_progress(user_id, lesson_id) do
-      nil ->
-        create_user_progress(Map.merge(attrs, %{user_id: user_id, lesson_id: lesson_id}))
-
-      progress ->
-        update_user_progress(progress, attrs)
-    end
+  def get_user_module_progress(%User{} = user, %Module{} = module) do
+    UserProgress
+    |> where(user_id: ^user.id, module_id: ^module.id)
+    |> Repo.all()
   end
 
   @doc """
-  Creates user progress.
+  Gets a user's progress for a track.
   """
-  def create_user_progress(attrs \\ %{}) do
-    %UserProgress{}
-    |> UserProgress.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates user progress.
-  """
-  def update_user_progress(%UserProgress{} = progress, attrs) do
-    progress
-    |> UserProgress.changeset(attrs)
-    |> Repo.update()
+  def get_user_track_progress(%User{} = user, %Track{} = track) do
+    UserProgress
+    |> where(user_id: ^user.id, track_id: ^track.id)
+    |> Repo.all()
   end
 end
