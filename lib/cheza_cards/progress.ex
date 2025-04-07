@@ -5,8 +5,9 @@ defmodule ChezaCards.Progress do
 
   import Ecto.Query, warn: false
   alias ChezaCards.Repo
-
-  alias ChezaCards.Progress.UserProgress
+  alias ChezaCards.Learning.UserProgress
+  alias ChezaCards.Progress.UserMetrics
+  alias ChezaCards.Progress.Achievement
 
   @doc """
   Returns the list of user_progress.
@@ -14,44 +15,44 @@ defmodule ChezaCards.Progress do
   ## Examples
 
       iex> list_user_progress()
-      [%UserProgress{}, ...]
+      [%UserMetrics{}, ...]
 
   """
   def list_user_progress do
-    Repo.all(UserProgress)
+    Repo.all(UserMetrics)
   end
 
   @doc """
   Gets a single user_progress.
 
-  Raises `Ecto.NoResultsError` if the User progress does not exist.
+  Raises `Ecto.NoResultsError` if the User metrics does not exist.
 
   ## Examples
 
-      iex> get_user_progress!(123)
-      %UserProgress{}
+      iex> get_user_metrics!(123)
+      %UserMetrics{}
 
-      iex> get_user_progress!(456)
+      iex> get_user_metrics!(456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_user_progress!(id), do: Repo.get!(UserProgress, id)
+  def get_user_metrics!(id), do: Repo.get!(UserMetrics, id)
 
   @doc """
   Creates a user_progress.
 
   ## Examples
 
-      iex> create_user_progress(%{field: value})
-      {:ok, %UserProgress{}}
+      iex> create_user_metrics(%{field: value})
+      {:ok, %UserMetrics{}}
 
-      iex> create_user_progress(%{field: bad_value})
+      iex> create_user_metrics(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_user_progress(attrs \\ %{}) do
-    %UserProgress{}
-    |> UserProgress.changeset(attrs)
+  def create_user_metrics(attrs \\ %{}) do
+    %UserMetrics{}
+    |> UserMetrics.changeset(attrs)
     |> Repo.insert()
   end
 
@@ -60,49 +61,47 @@ defmodule ChezaCards.Progress do
 
   ## Examples
 
-      iex> update_user_progress(user_progress, %{field: new_value})
-      {:ok, %UserProgress{}}
+      iex> update_user_metrics(user_metrics, %{field: new_value})
+      {:ok, %UserMetrics{}}
 
-      iex> update_user_progress(user_progress, %{field: bad_value})
+      iex> update_user_metrics(user_metrics, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_user_progress(%UserProgress{} = user_progress, attrs) do
-    user_progress
-    |> UserProgress.changeset(attrs)
+  def update_user_metrics(%UserMetrics{} = user_metrics, attrs) do
+    user_metrics
+    |> UserMetrics.changeset(attrs)
     |> Repo.update()
   end
 
   @doc """
-  Deletes a user_progress.
+  Deletes a user_metrics.
 
   ## Examples
 
-      iex> delete_user_progress(user_progress)
-      {:ok, %UserProgress{}}
+      iex> delete_user_metrics(user_metrics)
+      {:ok, %UserMetrics{}}
 
-      iex> delete_user_progress(user_progress)
+      iex> delete_user_metrics(user_metrics)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_user_progress(%UserProgress{} = user_progress) do
-    Repo.delete(user_progress)
+  def delete_user_metrics(%UserMetrics{} = user_metrics) do
+    Repo.delete(user_metrics)
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking user_progress changes.
+  Returns an `%Ecto.Changeset{}` for tracking user_metrics changes.
 
   ## Examples
 
-      iex> change_user_progress(user_progress)
-      %Ecto.Changeset{data: %UserProgress{}}
+      iex> change_user_metrics(user_metrics)
+      %Ecto.Changeset{data: %UserMetrics{}}
 
   """
-  def change_user_progress(%UserProgress{} = user_progress, attrs \\ %{}) do
-    UserProgress.changeset(user_progress, attrs)
+  def change_user_metrics(%UserMetrics{} = user_metrics, attrs \\ %{}) do
+    UserMetrics.changeset(user_metrics, attrs)
   end
-
-  alias ChezaCards.Progress.Achievement
 
   @doc """
   Returns the list of achievements.
@@ -196,5 +195,39 @@ defmodule ChezaCards.Progress do
   """
   def change_achievement(%Achievement{} = achievement, attrs \\ %{}) do
     Achievement.changeset(achievement, attrs)
+  end
+
+   def compute_progress(user_id) do
+    completed_count =
+      UserProgress
+      |> where([up], up.user_id == ^user_id and up.status == "completed")
+      |> select([up], count(up.id))
+      |> Repo.one()
+
+    total_lessons =
+      UserProgress
+      |> where([up], up.user_id == ^user_id)
+      |> select([up], count(up.id))
+      |> Repo.one()
+
+    metrics =
+      UserMetrics
+      |> where([um], um.user_id == ^user_id)
+      |> Repo.one()
+
+    %{
+      completed_lessons: completed_count,
+      total_lessons: total_lessons,
+      completion_percentage:
+        if total_lessons > 0 do
+          Float.round((completed_count / total_lessons) * 100, 2)
+        else
+          0.0
+        end,
+      streak_count: metrics && metrics.streak_count || 0,
+      total_stars: metrics && metrics.total_stars || 0,
+      level: metrics && metrics.level || 1,
+      last_activity: metrics && metrics.last_activity
+    }
   end
 end

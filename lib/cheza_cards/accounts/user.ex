@@ -8,6 +8,8 @@ defmodule ChezaCards.Accounts.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :naive_datetime
     field :is_admin, :boolean, default: false
+    field :name, :string
+    field :avatar_url, :string
 
     has_many :collections, ChezaCards.Cards.Collection
     has_many :flashcards, ChezaCards.Cards.Flashcard

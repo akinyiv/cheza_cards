@@ -2,11 +2,11 @@ defmodule ChezaCardsWeb.UserProgressLive.Index do
   use ChezaCardsWeb, :live_view
 
   alias ChezaCards.Progress
-  alias ChezaCards.Progress.UserProgress
+  alias ChezaCards.Progress.UserMetrics
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :user_progress_collection, Progress.list_user_progress())}
+    {:ok, stream(socket, :user_progress_collection, Progress.list_user_metrics())}
   end
 
   @impl true
@@ -17,13 +17,13 @@ defmodule ChezaCardsWeb.UserProgressLive.Index do
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
     |> assign(:page_title, "Edit User progress")
-    |> assign(:user_progress, Progress.get_user_progress!(id))
+    |> assign(:user_progress, Progress.get_user_metrics!(id))
   end
 
   defp apply_action(socket, :new, _params) do
     socket
     |> assign(:page_title, "New User progress")
-    |> assign(:user_progress, %UserProgress{})
+    |> assign(:user_progress, %UserMetrics{})
   end
 
   defp apply_action(socket, :index, _params) do
@@ -39,8 +39,8 @@ defmodule ChezaCardsWeb.UserProgressLive.Index do
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
-    user_progress = Progress.get_user_progress!(id)
-    {:ok, _} = Progress.delete_user_progress(user_progress)
+    user_progress = Progress.get_user_metrics!(id)
+    {:ok, _} = Progress.delete_user_metrics(user_progress)
 
     {:noreply, stream_delete(socket, :user_progress_collection, user_progress)}
   end
